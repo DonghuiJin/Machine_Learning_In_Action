@@ -1,6 +1,8 @@
 from numpy import *
 import operator
 import pylint
+import matplotlib
+import matplotlib.pyplot as plt
 
 #初始数据以及标签分类
 def createDataSet():
@@ -8,7 +10,9 @@ def createDataSet():
     labels = ['A', 'A', 'B', 'B']
     return group, labels
 
-'''k-nn 算法实现'''
+'''k-nn 算法实现
+2019.10.24
+'''
 #inX : 用于分类的输入向量
 #dataSet : 输入的样本训练集
 #labels : 标签向量
@@ -62,7 +66,9 @@ def classify0(inX, dataSet, labels, k):
     #返回的是对应的类别
     return sortedClassCount[0][0]
 
-'''将文本记录到转换Numpy的解析程序'''
+'''将文本记录到转换Numpy的解析程序
+2019.10.25
+'''
 def file2matrix(filename):
     
     '''得到文件的行数'''
@@ -96,12 +102,89 @@ def file2matrix(filename):
     #返回三种特征的矩阵版本以及对应分类的列表
     return returnMat, classLabelVector
 
+'''归一化特征值 
+2019.10.26
+'''
+def autoNorm(dataSet):
+    #求出最大，最小值，参数0可以在列中选取最小值
+    minVals = dataSet.min(0)
+    maxVals = dataSet.max(0)
+    #求出分母
+    ranges = maxVals - minVals
+    #创建和数据一样大的零矩阵
+    normDataSet = zeros(shape(dataSet))
+    #求出数据的个数
+    m = dataSet.shape[0]
+    #求出分子
+    #minVals和value都是1*3的矩阵，通过tile方法可以将其变为1000*3矩阵，和dataSet矩阵的规模一样
+    normDataSet = dataSet - tile(minVals, (m, 1))
+    #计算最后的式子
+    normDataSet = normDataSet / tile(ranges, (m, 1))
+    return normDataSet, ranges, minVals
+
+'''分类器针对约会网站的测试代码
+2019.10.26
+'''
+def datingClassTest():
+    #用于测试集的比率
+    hoRatio = 0.10
+    #读取数据
+    datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
+    #将数据进行归一化处理
+    normMat, ranges, minVals = autoNorm(datingDataMat)
+    #计算出用于测试集的样例数量numTestVecs
+    m = normMat.shape[0]
+    numTestVecs = int(m * hoRatio)
+    #计算错误率
+    errorCount = 0.0
+    for i in range(numTestVecs):
+        classifierResult = classify0(normMat[i, :], normMat[numTestVecs:m, :], datingLabels[numTestVecs:m], 3)
+        print("the classifier came back with: %d, the real answer is: %d" % (classifierResult, datingLabels[i]))
+        if (classifierResult != datingLabels[i]) : errorCount += 1.0
+    print("the total error rate is: %f" % (errorCount/float(numTestVecs)))
+
+'''约会网站测试函数
+2019.10.26
+'''
+def classifyPerson():
+    resultList = ['not at all', 'in small doses', 'in large doses']
+    percentTats = float(input("percentage of time spent playing video games?"))
+    ffMiles = float(input("frequent fliter miles earned per year?"))
+    iceCream = float(input("liters of ice cream consumed per year?"))
+    datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
+    normMat, ranges, minvals =autoNorm(datingDataMat)
+    inArr = array([ffMiles, percentTats, iceCream])
+    classifierResult = classify0((inArr - minvals) / ranges, normMat, datingLabels, 3)
+    print("You will probably like this person: ", resultList[classifierResult - 1])    
+
 if __name__ == '__main__':
-    #初始测试
+    '''初始测试'''
     group, labels = createDataSet()
     print(classify0([0, 0], group, labels, 3))
-    #改进约会网站的配对效果测试
+
+    '''改进约会网站的配对效果测试'''
     datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
     print(datingDataMat, datingLabels)
 
+    '''使用Matplotlib创建散点图'''
+    #创建一个图像
+    fig = plt.figure()
+    #subplot(nrows, ncols, index)
+    #创建nrows行， ncols列的网格，可以摆放nrows*ncols张子图，index为子图标号
+    #add_subplot(111) = add_subplot(1, 1, 1)
+    ax = fig.add_subplot(111)
+    #关于scatter函数的相关信息
+    #https://blog.csdn.net/AnneQiQi/article/details/64125186
+    ax.scatter(datingDataMat[:, 0], datingDataMat[:, 1], 15.0 * array(datingLabels), 15.0 * array(datingLabels))
+    plt.show()
+
+    '''测试归一化数值函数'''
+    normMat, ranges, minVals = autoNorm(datingDataMat)
+    print(normMat, '\n', ranges, '\n', minVals)
+
+    '''测试分类器错误率'''
+    print(datingClassTest())
+
+    '''约会网站测试函数的测试'''
+    print(classifyPerson())
             
