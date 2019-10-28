@@ -3,6 +3,8 @@ import operator
 import pylint
 import matplotlib
 import matplotlib.pyplot as plt
+#可以列出给定目录的文件名
+from os import listdir
 
 #初始数据以及标签分类
 def createDataSet():
@@ -157,6 +159,71 @@ def classifyPerson():
     classifierResult = classify0((inArr - minvals) / ranges, normMat, datingLabels, 3)
     print("You will probably like this person: ", resultList[classifierResult - 1])    
 
+'''将图像转化为向量
+2019_10_28
+'''
+def img2vector(filename):
+    #创建图像转化为向量的矩阵
+    returnVect = zeros((1, 1024))
+    fr = open(filename)
+    for i in range(32):
+        #读取一行32个数字
+        lineStr = fr.readline()
+        for j in range(32):
+            returnVect[0, 32 * i + j] = int(lineStr[j])
+    return returnVect
+
+
+'''2_6手写数字识别系统的测试代码
+2019_10_28
+'''
+def handwritingClassTest():
+    hwLabels = []
+    #listdir函数会获取目录的内容
+    trainingFileList = listdir('trainingDigits')
+    #计算目录中有多少个文件
+    m = len(trainingFileList)
+    #创建训练数据
+    trainingMat = zeros((m, 1024))
+    for i in range(m):
+
+        '''从文件名解析数字'''
+
+        #提取文件的名字
+        fileNameStr = trainingFileList[i]
+        #使用'.'对文件名进行切片,取第一部分
+        fileStr = fileNameStr.split('.')[0]
+        #使用'_'对第一部分切片，再取其中的第一部分，得到分类的数字，然后转化为int类型
+        classNumStr = int(fileStr.split('_')[0])
+        #将该数字加入标签列表中
+        hwLabels.append(classNumStr)
+
+        #使用img2vector函数载入图像
+        trainingMat[i, :] = img2vector('trainingDigits/%s' % fileNameStr)
+    
+    #获取测试数据的文件名
+    testFileList = listdir('testDigits')
+    errorCount = 0.0
+    mTest = len(testFileList)
+    for i in range(mTest):
+
+        '''从文件名解析数字'''
+
+        fileNameStr = testFileList[i]
+        fileStr = fileNameStr.split('.')[0]
+        classNumStr = int(fileStr.split('_')[0])
+
+        #将测试图片载入
+        vectorUnderTest = img2vector('testDigits/%s' % fileNameStr)
+        #将测试集，训练集放入分类器中
+        classifierResult = classify0(vectorUnderTest, trainingMat, hwLabels, 3)
+        print("the classifier came back with: %d, the real answer is: %d" % (classifierResult, classNumStr))
+        if (classifierResult != classNumStr):
+            errorCount += 1.0
+    print("\nthe total number of errors is: %d" % errorCount)
+    print("\nthe total error rate is: %f" % (errorCount/float(mTest)))
+
+
 if __name__ == '__main__':
     '''初始测试'''
     group, labels = createDataSet()
@@ -187,4 +254,9 @@ if __name__ == '__main__':
 
     '''约会网站测试函数的测试'''
     print(classifyPerson())
+    
+    '''测试手写数字识别'''
+    print(handwritingClassTest())
+
+
             
