@@ -125,7 +125,7 @@ def createTree(dataSet, labels):
     #选择最好的数据集划分方式，然后将该分类标签存入变量
     bestFeat = chooseBestFeatureToSplit(dataSet)
     bestFeatLabel = labels[bestFeat]
-    #创建字典类型储存树
+    #创建字典类型储存树, 很多代表树结构信息的嵌套字典
     myTree = {bestFeatLabel:{}}
     #删除labels列表中bestFeat下标的元素
     del(labels[bestFeat])
@@ -134,6 +134,7 @@ def createTree(dataSet, labels):
     uniqueVals = set(featValues)
     for value in uniqueVals:
         subLabels = labels[:]
+        #递归自己
         myTree[bestFeatLabel][value] = createTree(splitDataSet(dataSet, bestFeat, value), subLabels)
     return myTree
 
@@ -168,3 +169,8 @@ if __name__ == '__main__':
     '''测试最好的数据集划分方式'''
     print(myDat)
     print(chooseBestFeatureToSplit(myDat))
+
+    '''测试树'''
+    myDat, labels = createDataSet()
+    myTree = createTree(myDat, labels)
+    print(myTree)
