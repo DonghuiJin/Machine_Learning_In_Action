@@ -1,5 +1,6 @@
 from math import log
 import operator
+import treePlotter
 
 '''3_1计算给定数据集的香农熵
 2019_11_1
@@ -114,6 +115,7 @@ def majorityCnt(classList):
 #dataSet:数据集
 #labels:标签列表
 def createTree(dataSet, labels):
+    
     #把dataSet的最后一列拿出来放到列表中
     classList = [example[-1] for example in dataSet]
     #如果所有的类标签完全相同，那么直接返回该类标签
@@ -124,10 +126,11 @@ def createTree(dataSet, labels):
         return majorityCnt(classList)
     #选择最好的数据集划分方式，然后将该分类标签存入变量
     bestFeat = chooseBestFeatureToSplit(dataSet)
+    print(bestFeat)
     bestFeatLabel = labels[bestFeat]
     #创建字典类型储存树, 很多代表树结构信息的嵌套字典
     myTree = {bestFeatLabel:{}}
-    #删除labels列表中bestFeat下标的元素
+    #删除labels列表中bestFeat下标的元素,此节点已经创建
     del(labels[bestFeat])
     #把特征对应的值集合化
     featValues = [example[bestFeat] for example in dataSet]
@@ -151,6 +154,43 @@ def createDataSet():
     labels = ['no surfacing', 'flippers']
     return dataSet, labels
 
+'''3_8使用决策树的分类函数
+2019_11_2
+'''
+#inputTree:输入的已经建立好的树
+#featLabels:所有的特征标签
+#testVec:测试的路径，在决策时是选1还是选0
+def classify(inputTree, featLabels, testVec):
+    firstSides = list(inputTree.keys())
+    firstStr = firstSides[0]
+    secondDict = inputTree[firstStr]
+    #将标签字符转化为索引，使用index方法查找当前列表中第一个匹配firstStr变量的元素
+    featIndex =featLabels.index(firstStr)
+    for key in secondDict.keys():
+        if testVec[featIndex] == key:
+            if type(secondDict[key]).__name__ == 'dict':
+                classLabel = classify(secondDict[key], featLabels, testVec)
+            else:
+                classLabel = secondDict[key]
+    return classLabel
+
+'''3_9使用决策树的分类函数
+2019_11_2
+'''
+#提前将决策树创建好，在每次执行分类时调用已经构造好的决策树
+def storeTree(inputTree, filename):
+    #调用pickle来序列化对象
+    import pickle
+    #将原来的'w+'换为'wb+'
+    fw = open(filename, 'wb+')
+    pickle.dump(inputTree, fw)
+    fw.close()
+
+def grabTree(filename):
+    import pickle
+    #将原来的没有第二个参数，变为'rb+'
+    fr = open(filename, 'rb+')
+    return pickle.load(fr)
 
 if __name__ == '__main__':
     
@@ -174,3 +214,21 @@ if __name__ == '__main__':
     myDat, labels = createDataSet()
     myTree = createTree(myDat, labels)
     print(myTree)
+    
+    '''测试分类函数'''
+    myDat, labels = createDataSet()
+    myTree = treePlotter.retrieveTree(0)
+    print(classify(myTree, labels, [1, 0]))
+    print(classify(myTree, labels, [1, 1]))
+    
+    '''测试pick模块储存决策树'''
+    storeTree(myTree, 'classifierStorage.txt')
+    print(grabTree('classifierStorage.txt'))
+
+    '''使用决策树预测隐形眼镜类型'''
+    fr = open('lenses.txt')
+    lenses = [inst.strip().split('\t') for inst in fr.readlines()]
+    lensesLabels = ['age', 'prescript', 'astigmatic', 'tearRate']
+    lensesTree = createTree(lenses, lensesLabels)
+    print(lensesTree)
+    print(treePlotter.createPlot(lensesTree))
