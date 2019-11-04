@@ -92,8 +92,127 @@ def testingNB():
     thisDoc = array(setOfWords2Vec(myVocabList, testEntry))
     print(testEntry, 'classified as: ', classifyNB(thisDoc, p0V, p1V, pAb))
     testEntry = ['stupid', 'garbage']
-    thisDoc =array(setOfWords2Vec(myVocabList, testEntry))
+    thisDoc = array(setOfWords2Vec(myVocabList, testEntry))
     print(testEntry, 'classified as: ', classifyNB(thisDoc, p0V, p1V, pAb))
+
+'''4_4朴素贝叶斯词袋模型
+2019_11_4
+'''
+
+def bagOfWords2VecMN(vocabList, inputSet):
+    returnVec = [0] * len(vocabList)
+    for word in inputSet:
+        if word in vocabList:
+            returnVec[vocabList.index(word)] += 1
+    return returnVec
+
+'''4_5文件解析及完整的垃圾邮件测试函数
+2019_11_4
+'''
+#接收一个大写字符串并将其解析为字符串列表
+def textParse(bigString):
+    import re
+    #将字符串中的一些标点符号去除
+    listOfTokens = re.split(r'\W*', bigString)
+    #将所有字符串转换为小写，去掉少于两个字符的字符串，转化为字符列表输出
+    return [tok.lower() for tok in listOfTokens if len(tok) > 2]
+
+#贝叶斯垃圾邮件分类器进行自动化处理
+def spamTest():
+    docList = []
+    classList = []
+    fullText = []
+    for i in range(1, 26):
+        #1导入并解析文件
+        wordList = textParse(open('email/spam/%d.txt' % i).read())
+        docList.append(wordList)
+        fullText.extend(wordList)
+        classList.append(1)
+        wordList = textParse(open('email/ham/%d.txt' % i).read())
+        docList.append(wordList)
+        fullText.extend(wordList)
+        classList.append(0)
+    #构建词列表
+    vocabList = creatVocabList(docList)
+    #构建测试集[0, 1, 2, ..., 49]
+    trainingSet = range(50)
+    #构建训练集
+    testSet = []
+    for i in range(10):
+        #2随机构建测试集，测试集中有10项
+        randIndex = int(random.uniform(0, len(trainingSet)))
+        testSet.append(trainingSet[randIndex])
+        #从训练集中将测试集去掉,这里trainingSet需要变为列表类型
+        del(list(trainingSet)[randIndex])
+    trainMat = []
+    trainClasses = []
+    for docIndex in trainingSet:
+        #对每一封邮件基于词汇表建立词向量
+        trainMat.append(setOfWords2Vec(vocabList, docList[docIndex]))
+        trainClasses.append(classList[docIndex])
+    #计算分类所需的概率
+    p0V, p1V, pSpam = trainNB0(array(trainMat), array(trainClasses))
+    errorCount = 0
+    for docIndex in testSet:
+        #3对测试集分类，将其变为词向量
+        wordVector = setOfWords2Vec(vocabList, docList[docIndex])
+        #使用分类函数，得到的分类结果和对应标签不同，错误数加一
+        if classifyNB(array(wordVector), p0V, p1V, pSpam) != classList[docIndex]:
+            errorCount += 1
+    print('the error rate is: ', float(errorCount) / len(testSet))
+
+'''4_6 RSS源分类器及高频词去除函数
+2019_11_4
+'''
+
+#1计算出现频率
+def calcMostFreq(vocabList, fullText):
+    import operator
+    freqDict = {}
+    for token in vocabList:
+        freqDict[token] = fullText.count(token)
+        sortedFreq = sorted(freqDict.items(), key=operator.itemgetter(1), reverse=True)
+    return sortedFreq[:30]
+
+def localWords(feed1, feed0):
+    import feedparser
+    docList = []
+    classList = []
+    fullText = []
+    minLen = min(len(feed1['entries']), len(feed0['entries']))
+    for i in range(minLen):
+        wordList = textParse(feed1['entries'][i]['summary'])
+        docList.append(wordList)
+        fullText.extend(wordList)
+        classList.append(1)
+        wordList = textParse(feed0['entries'][i]['summary'])
+        docList.append(wordList)
+        fullText.extend(wordList)
+        classList.append(0)
+    vocabList = creatVocabList(docList)
+    top30Words = calcMostFreq(vocabList, fullText)
+    for pairW in top30Words:
+        if pairW[0] in vocabList: vocabList.remove(pairW[0])
+    trainingSet = range(2 * minLen)
+    testSet = []
+    for i in range(20):
+        randIndex = int(random.uniform(0, len(trainingSet)))
+        testSet.append(trainingSet[randIndex])
+        del(trainingSet[randIndex])
+    trainMat = []
+    trainClasses = []
+    for docIndex in trainingSet:
+        trainMat.append(bagOfWords2VecMN(vocabList, docList[docIndex]))
+        trainClasses.append(classList[docIndex])
+    p0V, p1V, pSpam = trainNB0(array(trainMat), array(trainClasses))
+    errorCount = 0
+    for docIndex in testSet:
+        wordVector = bagOfWords2VecMN(vocabList, docList[docIndex])
+        if classifyNB(array(wordVector), p0V, p1V, pSpam) != classList[docIndex]:
+            errorCount += 1
+    print('the error rate is: ', float(errorCount) / len(testSet))
+    return vocabList, p0V, p1V
+
 
 if __name__ == '__main__':
     '''测试词表转换为向量函数'''
@@ -118,4 +237,16 @@ if __name__ == '__main__':
 
     '''测试朴素贝叶斯分类函数'''
     print(testingNB())
+
+    '''贝叶斯垃圾邮件分类测试'''
+    print(spamTest())
+
+    '''RSS源分类器及高频词去除函数测试'''
+    #因为本书成书的时间距离现在比较久，所以给出的网址已经不可以使用了
+    #现改用新的网址
+    #源1 NASA Image of the Day：http://www.nasa.gov/rss/dyn/image_of_the_day.rss
+    #源0 Yahoo Sports - NBA - Houston Rockets News：http://sports.yahoo.com/nba/teams/hou/rss.xml
+    
+
+
 
