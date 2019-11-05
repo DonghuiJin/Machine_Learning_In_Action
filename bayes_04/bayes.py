@@ -1,4 +1,5 @@
 from numpy import *
+import feedparser
 
 '''4_1词表到向量的转换函数
 2019_11_3
@@ -174,13 +175,21 @@ def calcMostFreq(vocabList, fullText):
         sortedFreq = sorted(freqDict.items(), key=operator.itemgetter(1), reverse=True)
     return sortedFreq[:30]
 
+def stopWords():
+    import re
+    wordList = open('stopword.txt').read()
+    listOfTokens = re.split(r'\W*', wordList)
+    return listOfTokens
+
+
+#feed1,feed0是RSS的源头
 def localWords(feed1, feed0):
-    import feedparser
     docList = []
     classList = []
     fullText = []
     minLen = min(len(feed1['entries']), len(feed0['entries']))
     for i in range(minLen):
+        #2每次访问一条RSS源
         wordList = textParse(feed1['entries'][i]['summary'])
         docList.append(wordList)
         fullText.extend(wordList)
@@ -190,15 +199,20 @@ def localWords(feed1, feed0):
         fullText.extend(wordList)
         classList.append(0)
     vocabList = creatVocabList(docList)
+    stopWordList = stopWords()
+    for stopWord in stopWordList:
+        if stopWord in vocabList:
+            vocabList.remove(stopWord)
+    '''因为找到的RSS的条目数比书上给出的少很多，所以这一条不适用
     top30Words = calcMostFreq(vocabList, fullText)
     for pairW in top30Words:
-        if pairW[0] in vocabList: vocabList.remove(pairW[0])
+        if pairW[0] in vocabList: vocabList.remove(pairW[0])'''
     trainingSet = range(2 * minLen)
     testSet = []
-    for i in range(20):
+    for i in range(10):
         randIndex = int(random.uniform(0, len(trainingSet)))
         testSet.append(trainingSet[randIndex])
-        del(trainingSet[randIndex])
+        del(list(trainingSet)[randIndex])
     trainMat = []
     trainClasses = []
     for docIndex in trainingSet:
@@ -213,7 +227,25 @@ def localWords(feed1, feed0):
     print('the error rate is: ', float(errorCount) / len(testSet))
     return vocabList, p0V, p1V
 
-
+def getTopWords(ny, sf):
+    import operator
+    vocabList, p0V, p1V = localWords(ny, sf)
+    topNY = []
+    topSF = []
+    for i in range(len(p0V)):
+        if p0V[i] > -6.0:
+            topSF.append((vocabList[i], p0V[i]))
+        if p1V[i] > -6.0:
+            topNY.append((vocabList[i], p1V[i]))
+    sortedSF = sorted(topSF, key=lambda pair: pair[1], reverse=True)
+    print("SF**SF**SF**SF**SF**SF**SF**SF**SF**SF**SF**SF**SF**SF**SF**SF**")
+    for item in sortedSF:
+        print(item[0])
+    sortedNY = sorted(topSF, key=lambda pair: pair[1], reverse=True)
+    print("NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**")
+    for item in sortedNY:
+        print(item[0])
+    
 if __name__ == '__main__':
     '''测试词表转换为向量函数'''
     listOPosts, listClasses = loadDataSet()
@@ -246,7 +278,11 @@ if __name__ == '__main__':
     #现改用新的网址
     #源1 NASA Image of the Day：http://www.nasa.gov/rss/dyn/image_of_the_day.rss
     #源0 Yahoo Sports - NBA - Houston Rockets News：http://sports.yahoo.com/nba/teams/hou/rss.xml
-    
+    ny = feedparser.parse('http://www.nasa.gov/rss/dyn/image_of_the_day.rss')
+    sf = feedparser.parse('http://sports.yahoo.com/nba/teams/hou/rss.xml')
+    vocabList, pSF, pNY = localWords(ny, sf)
+    getTopWords(ny, sf)
+
 
 
 
