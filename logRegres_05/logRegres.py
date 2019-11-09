@@ -124,7 +124,7 @@ def stocGradAscent1(dataMatrix, classLabels, numIter=150):
     return weights
 
 '''5_5 Logistic回归分类函数
-2019_11_7
+2019_11_9
 '''
 
 def classifyVector(inX, weights):
@@ -135,19 +135,52 @@ def classifyVector(inX, weights):
         return 0.0
 
 def colicTest():
-    frTrain = open('hoeseColicTraining.txt')
+    #读取训练集文件
+    frTrain = open('horseColicTraining.txt')
+    #读取测试集文件
     frTest = open('horseColicTest.txt')
+    #建立训练集列表
     trainingSet = []
+    #建立训练集标签列表
     trainingLabels = []
-    for line in 
+    #处理训练集文件
+    for line in frTrain.readlines():
+        #strip():移除字符串首尾的空格和制表符
+        #split():返回一个列表，'\t'是分开字符串的标志，分为一个个列表元素
+        currLine = line.strip().split('\t')
+        lineArr = []
+        #数据的前21个都是对应的特征
+        for i in range(21):
+            lineArr.append(float(currLine[i]))
+        #将这一行的特征加入到训练集中的一行
+        trainingSet.append(lineArr)
+        #将这一行对应的标签加入训练标签列表
+        trainingLabels.append(float(currLine[21]))
+    #求出训练权重
+    trainWeights = stocGradAscent1(np.array(trainingSet), trainingLabels, 500)
+    errorCount = 0
+    numTestVec = 0.0
+    #一样的方式对测试集进行处理
+    for line in frTest.readlines():
+        numTestVec += 1.0
+        currLine = line.strip().split('\t')
+        lineArr = []
+        for i in range(21):
+            lineArr.append(float(currLine[i]))
+        #如果分类结果和对应的标签不一致，错误数目加一
+        if int(classifyVector(np.array(lineArr), trainWeights)) != int(currLine[21]):
+            errorCount += 1
+    errorRate = (float(errorCount) / numTestVec)
+    print("the error rate of this test is: %f" % errorRate)
+    return errorRate
 
-
-
-
-
-
-
-
+def multiTest():
+    numTests = 10
+    errorSum = 0.0
+    #调用函数colicTest()10次，并求出结果的平均值
+    for k in range(numTests):
+        errorSum += colicTest()
+    print("after %d iterations the average error rate is: %f" % (numTests, errorSum / float(numTests)))
 
 
 if __name__ == '__main__':
@@ -168,4 +201,7 @@ if __name__ == '__main__':
     print("5_4改进的随机梯度上升算法")
     weights = stocGradAscent1(data1, labelMat)
     plotBestFit(weights)
+    #5_5Logistic回归分类函数
+    print("5_5Logistic回归分类函数测试")
+    multiTest()
 
