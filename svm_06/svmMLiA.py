@@ -32,34 +32,42 @@ def clipAlpha(aj, H, L):
     return aj
 
 '''6_2简化版SMO算法
-2019_11_9
+2019_11_10
+理解欠缺，还需回头继续看
 '''
 
-#dataMatIn: 数据集
-#classLabels: 类别标签
+#dataMatIn: 数据集 100*2
+#classLabels: 类别标签 100*1
 #C: 常数C
 #toler: 容错率
 #maxIter: 退出当前最大的循环次数
 def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
+    #100*2
     dataMatrix = np.mat(dataMatIn)
     labelMat = np.mat(classLabels).transpose()
     b = 0
     m, n = np.shape(dataMatrix)
-    alphas = np.zeros(m, 1)
+    alphas = np.mat(np.zeros((m, 1)))
+    #储存没有任何alpha改变的情况下遍历数据集的次数
     iter = 0
     while (iter < maxIter):
+        #该变量用来记录alpha是否已经进行了优化
         alphaPairsChanged = 0
         for i in range(m):
+            #计算出预测的类别
+            #multiply:数组和矩阵对应位置相乘，输出与相乘数组/矩阵大小一致
+            #*:对数组执行对应位置相乘，对矩阵执行矩阵乘法运算   
             fXi = float(np.multiply(alphas, labelMat).T*\
-                (dataMatrix * dataMatrix[j, :].T)) + b
+                (dataMatrix * dataMatrix[i, :].T)) + b
+            #计算与标签之间的误差
             Ei = fXi - float(labelMat[i])
-            #1 如果alpha可以改变优化过程
+            #1 如果alpha可以更改进优化过程
             if ((labelMat[i] * Ei < -toler) and (alphas[i] < C)) or \
                 ((labelMat[i] * Ei > toler) and \
                 (alphas[i] > 0)):
                 #2 随机选择第二个alpha
                 j = selectJrand(i, m)
-                fXj = float(np.multiply(alphas, labelMat).T * \
+                fXj = float(np.multiply(alphas, labelMat).T*\
                     (dataMatrix * dataMatrix[j, :].T)) + b
                 Ej = fXj - float(labelMat[j])
                 alphaIold = alphas[i].copy()
@@ -69,18 +77,19 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
                     L = max(0, alphas[j] - alphas[i])
                     H = min(C, C + alphas[j] - alphas[i])
                 else:
-                    L = max(0, alphas[j] + alphas[i] - c)
+                    L = max(0, alphas[j] + alphas[i] - C)
                     H = min(C, alphas[j] + alphas[i])
                 if L == H:
                     print("L == H")
                     continue
+                #eta是alpha[j]的最优修改量
                 eta = 2.0 * dataMatrix[i, :] * dataMatrix[j, :].T - \
                     dataMatrix[i, :] * dataMatrix[i, :].T - \
                     dataMatrix[j, :] * dataMatrix[j, :].T
                 if eta >= 0:
                     print("eta >= 0")
                     continue
-                alphas[i] -= labelMat[j] * (Ei - Ej) / eta
+                alphas[j] -= labelMat[j] * (Ei - Ej) / eta
                 alphas[j] = clipAlpha(alphas[j], H, L)
                 if (abs(alphas[j] - alphaJold) < 0.00001):
                     print("j not moving enough")
@@ -116,7 +125,13 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
 
 if __name__ == '__main__':
     #6_1SMO算法中的辅助函数测试
-    print("6_1SMO算法中的辅助函数")
-    dataArr, labelArr = loadDataSet('testSet.txt')
-    print(labelArr)
-    
+    '''6_1SMO算法中的辅助函数'''
+    #dataArr, labelArr = svmMLiA.loadDataSet('testSet.txt')
+    #print(labelArr)
+    #6_2简化版SMO算法测试
+    '''6_2简化版SMO算法'''
+    #b, alphas = svmMLiA.smoSimple(dataArr, labelArr, 0.6, 0.001, 40)
+    #alphas[alphas>0]
+    #b
+    #for i in range(100):
+    #if alphas[i]>0.0:print(dataArr[i], labelArr[i])
