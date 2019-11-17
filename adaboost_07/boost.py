@@ -52,11 +52,9 @@ def buildStump(dataArr, classLabels, D):
                 errArr[predictedVals == labelMat] = 0
                 #1 计算加权错误率 
                 weightedError = D.T * errArr
-                '''
                 print("split: dim %d, thresh %.2f, thresh inequal: \
                     %s, the weighted error is %.3f" % \
                     (i, threshVal, inequal, weightedError))
-                '''
                 if weightedError < minError:
                     minError = weightedError
                     bestClasEst = predictedVals.copy()

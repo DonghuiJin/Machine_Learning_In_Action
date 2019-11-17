@@ -65,7 +65,7 @@ def adaBoostTrainDS(dataArr, classLabels, numIt = 40):
         print("total error: ", errorRate, "\n")
         #如果错误率降低到0时，就停止迭代
         if errorRate == 0.0: break
-    return weakClassArr
+    return weakClassArr, aggClassEst
 
 '''7_3 AdaBoost分类函数
 2019_11_16
@@ -103,8 +103,51 @@ def loadDataSet(fileName):
         curLine = line.strip().split('\t')
         for i in range(numFeat - 1):
             lineArr.append(float(curLine[i]))
-        dataMat.append(float(curLine[-1]))
+        dataMat.append(lineArr)
+        labelMat.append(float(curLine[-1]))
     return dataMat, labelMat
+
+'''7_5 ROC曲线的绘制及AUC计算函数
+2019_11_17
+'''
+
+def plotROC(predStrengths, classLabels):
+    '''
+    输入参数:
+    predStrengths:分类器的预测强度
+    '''
+    import matplotlib.pyplot as plt
+    #保留绘制光标的位置
+    cur = (1.0, 1.0)
+    #用于计算AUC的值
+    ySum = 0.0
+    #正例的数目，该值确定了在y坐标轴上的步进数目
+    numPosClas = sum(np.array(classLabels) == 1.0)
+    yStep = 1 / float(numPosClas)
+    xStep = 1 / float(len(classLabels) - numPosClas)
+    #1 获取排好序的索引
+    sortedIndicies = predStrengths.argsort()
+    fig = plt.figure()
+    fig.clf()
+    ax = plt.subplot(111)
+    for index in sortedIndicies.tolist()[0]:
+        if classLabels[index] == 1.0:
+            delX = 0
+            delY = yStep
+        else:
+            delX = xStep
+            delY = 0
+            ySum += cur[1]
+        ax.plot([cur[0], cur[0] - delX], [cur[1], cur[1] - delY], c = 'b')
+        cur = (cur[0] - delX, cur[1] - delY)
+    ax.plot([0, 1], [0, 1], 'b--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC curve for AdaBoost Horse Colic Detection System')
+    ax.axis([0, 1, 0, 1])
+    plt.show()
+    print("the Area Under the Curve is:", ySum * xStep)
+
 
 '''
 import numpy as np
@@ -120,10 +163,16 @@ adaboost.adaClassify([[5, 5], [0, 0]], classifierArr)
 7_4
 datArr, labelArr = adaboost.loadDataSet('horseColicTraining2.txt')
 classifierArray = adaboost.adaBoostTrainDS(datArr, labelArr, 10)
-testArr, testLabelArr = adaboost.loadDataSet('gorseColicTest2.txt')
+testArr, testLabelArr = adaboost.loadDataSet('horseColicTest2.txt')
 prediction10 = adaboost.adaClassify(testArr, classifierArray)
 errArr = np.mat(np.ones((67, 1)))
 errArr[prediction10 != np.mat(testLabelArr).T].sum()
+
+7_5
+datArr, labelArr = adaboost.loadDataSet('horseColicTraining2.txt')
+classifierArray, aggClassEst = adaboost.adaBoostTrainDS(datArr, labelArr, 10)
+adaboost.plotROC(aggClassEst.T, labelArr)
+
 '''
 
 
