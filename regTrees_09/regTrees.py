@@ -23,7 +23,7 @@ def binSplitDataSet(dataSet, feature, value):
     mat1 = dataSet[np.nonzero(dataSet[:, feature] <= value)[0], :]
     return mat0, mat1
 
-'''9_1 CART算法的实现代码
+'''9_1&2 CART算法的实现代码以及回归树切分函数
 2019_11_22
 '''
 
@@ -120,6 +120,7 @@ def chooseBestSplit(dataSet, leafType, errType = regErr, ops = (1, 4)):
     tolS = ops[0]
     tolN = ops[1]
     #如果当前所有值相等，则退出(根据set的特性)
+    #tolist():将数组或者矩阵转换成列表
     if len(set(dataSet[:, -1].T.tolist()[0])) == 1:
         return None, leafType(dataSet)
     #统计数据集合的行m和列n
@@ -187,8 +188,83 @@ def createTree(dataSet, leafType = regLeaf, errType = regErr, ops = (1, 4)):
     retTree['right'] = createTree(rSet, leafType, errType, ops)
     return retTree
 
+'''9_3 树剪枝(后剪枝)
+2019_11_23
+'''
+
+def isTree(obj):
+    '''
+    Function Description:
+        判断测试输入变量是否是一颗树
+    Parameters:
+        obj:测试对象
+    Time:
+        2019_11_23
+    '''
+    import types
+    return (type(obj).__name__ == 'dict')
+
+def getMean(tree):
+    '''
+    Function Description:
+        对树进行塌陷处理(即返回树平均值)
+    Parameters:
+        tree:树
+    Returns:
+        树的平均值
+    Time:
+        2019_11_23
+    '''
+    if isTree(tree['right']):
+        tree['right'] = getMean(tree['tree'])
+    if isTree(tree['left']):
+        tree['left'] = getMean(tree['left'])
+    return (tree['left'] + tree['right']) / 2.0
+
+def prune(tree, testData):
+    '''
+    Function Description:
+        后剪枝
+    Parameters:
+        tree: 树
+        testData: 测试集
+    Returns:
+        树的平均值
+    Time:
+        2019_11_23
+    '''
+    #如果测试集为空，则对树进行塌陷处理
+    if np.shape(testData)[0] == 0:
+        return getMean(tree)
+    #如果有左子树或者右子树，则切分数据集
+    if (isTree(tree['right']) or isTree(tree['left'])):
+        lSet, rSet = binSplitDataSet(testData, tree['spInd'], tree['spVal'])
+    #处理左子树(剪枝)
+    if isTree(tree['left']):
+        tree['left'] = prune(tree['left'], lSet)
+    #处理右子树(剪枝)
+    if isTree(tree['right']):
+        tree['right'] = prune(tree['right'], rSet)
+    #如果当前结点的左右结点为叶结点
+    if not isTree(tree['left']) and not isTree(tree['right']):
+        lSet, rSet = binSplitDataSet(testData, tree['spInd'], tree['spVal'])
+        #计算没有合并的误差
+        errorNoMerge = np.sum(np.power(lSet[:, -1] - tree['left'], 2)) + np.sum(np.power(rSet[:, -1] - tree['right'], 2))
+        #计算合并的均值
+        treeMean = (tree['left'] + tree['right']) / 2.0
+        #计算合并的误差
+        errorMerge = np.sum(np.power(testData[:, -1] - treeMean, 2))
+        #如果合并的误差小于没有合并的误差，则合并
+        if errorMerge < errorNoMerge:
+            return treeMean
+        else:
+            return tree
+    else:
+        return tree
+
 
 if __name__ == '__main__':
+    '''
     testMat = np.mat(np.eye(4))
     #切分的特征是第二列的特征
     mat0, mat1 = binSplitDataSet(testMat, 1, 0.5)
@@ -196,9 +272,40 @@ if __name__ == '__main__':
     print('mat0:\n', mat0)
     print('mat1:\n', mat1)
 
+    
     filename = 'ex00.txt'
     plotDataSet(filename)    
 
     myDat = loadDataSet('ex00.txt')
     myDat = np.mat(myDat)
     print(createTree(myDat))
+
+    filename = 'ex0.txt'
+    plotDataSet(filename)
+
+    myDat = loadDataSet(filename)
+    myMat = np.mat(myDat)
+    print(createTree(myMat))
+
+    filename = 'ex2.txt'
+    plotDataSet(filename)
+    myDat = loadDataSet(filename)
+    myMat = np.mat(myDat)
+    print(createTree(myMat, ops=(10000, 4)))
+    '''
+    print("剪枝前")
+    train_filename = 'ex2.txt'
+    train_Data = loadDataSet(train_filename)
+    train_Mat = np.mat(train_Data)
+    tree = createTree(train_Mat)
+    print(tree)
+    print("剪枝后")
+    test_filename = 'ex2test.txt'
+    test_Data = loadDataSet(test_filename)
+    test_Mat = np.mat(test_Data)
+    print(prune(tree, test_Mat))
+
+
+
+
+
