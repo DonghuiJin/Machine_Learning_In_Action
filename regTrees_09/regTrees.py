@@ -195,13 +195,14 @@ def createTree(dataSet, leafType = regLeaf, errType = regErr, ops = (1, 4)):
 def isTree(obj):
     '''
     Function Description:
-        判断测试输入变量是否是一颗树
+        判断测试输入变量是否是一颗树，判断当前处理的结点是否是叶结点
     Parameters:
         obj:测试对象
     Time:
         2019_11_23
     '''
     import types
+    #判断返回类型是不是字典类型
     return (type(obj).__name__ == 'dict')
 
 def getMean(tree):
@@ -216,7 +217,7 @@ def getMean(tree):
         2019_11_23
     '''
     if isTree(tree['right']):
-        tree['right'] = getMean(tree['tree'])
+        tree['right'] = getMean(tree['right'])
     if isTree(tree['left']):
         tree['left'] = getMean(tree['left'])
     return (tree['left'] + tree['right']) / 2.0
@@ -226,8 +227,8 @@ def prune(tree, testData):
     Function Description:
         后剪枝
     Parameters:
-        tree: 树
-        testData: 测试集
+        tree: 待剪枝的树
+        testData: 剪枝所需的测试数据
     Returns:
         树的平均值
     Time:
@@ -239,10 +240,10 @@ def prune(tree, testData):
     #如果有左子树或者右子树，则切分数据集
     if (isTree(tree['right']) or isTree(tree['left'])):
         lSet, rSet = binSplitDataSet(testData, tree['spInd'], tree['spVal'])
-    #处理左子树(剪枝)
+    #判断处理完后的左子树是否还是子树，如果还是子树，递归
     if isTree(tree['left']):
         tree['left'] = prune(tree['left'], lSet)
-    #处理右子树(剪枝)
+    #同上一个的判断，针对右子树
     if isTree(tree['right']):
         tree['right'] = prune(tree['right'], rSet)
     #如果当前结点的左右结点为叶结点
@@ -262,6 +263,144 @@ def prune(tree, testData):
     else:
         return tree
 
+'''9_4 模型树的叶结点生成函数
+2019_11_24
+'''
+
+def linearSolve(dataSet):
+    '''
+    Function Description:
+        数据集格式化为目标变量Y和自变量X
+    Parameters:
+        dataSet: 数据集
+    Returns:
+        计算线性回归之后的权重以及X和Y
+    Time:
+        2019_11_24
+    '''
+    m, n = np.shape(dataSet)
+    X = np.mat(np.ones((m, n)))
+    Y = np.mat(np.ones((m, 1)))
+    X[:, 1:n] = dataSet[:, 0:n-1]
+    Y = dataSet[:, -1]
+    xTx = X.T * X
+    #判断矩阵的逆是不是存在
+    if np.linalg.det(xTx) == 0:
+        raise NameError('This matrix is singular, cannot do inverse, \n\
+        try increasing the second value of ops')
+    ws = xTx.I * (X.T * Y)
+    return ws, X, Y
+
+def modelLeaf(dataSet):
+    '''
+    Function Description:
+        调用linearSolve函数
+    Parameters:
+        dataSet: 数据集
+    Returns:
+        返回回归系数ws
+    Time:
+        2019_11_24
+    '''
+    ws, X, Y = linearSolve(dataSet)
+    return ws
+
+def modelErr(dataSet):
+    '''
+    Function Description:
+        可以在给定的数据集计算误差
+    Parameters:
+        dataSet: 数据集
+    Returns:
+        计算yHat和Y之间的平方误差
+    Time:
+        2019_11_24
+    '''
+    ws, X, Y = linearSolve(dataSet)
+    yHat = X * ws
+    return sum(np.power(Y - yHat, 2))
+
+'''9_5 用树回归进行预测的代码
+2019_11_24
+'''
+
+def regTreeEval(model, inDat):
+    '''
+    Function Description:
+        可以在给定的数据集计算误差
+    Parameters:
+        model: 已经建立好的决策树模型
+        inDat: 输入数据
+    Returns:
+        返回树模型
+    Time:
+        2019_11_24
+    '''
+    return float(model)
+
+def modelTreeEval(model, inDat):
+    '''
+    Function Description:
+        对输入数据进行格式化处理
+    Parameters:
+        model: 已经建立好的决策树模型
+        inDat: 输入的数据集
+    Returns:
+        返回预测值
+    Time:
+        2019_11_24
+    '''
+    n = np.shape(inDat)[1]
+    #在第一列前加入一列1
+    X = np.mat(np.ones((1, n + 1)))
+    X[:, 1:n + 1] = inDat
+    return float(X * model)
+
+def treeForeCast(tree, inData, modelEval = regTreeEval):
+    '''
+    Function Description:
+        对输入数据进行格式化处理
+    Parameters:
+        tree: 已经建立好的决策树模型
+        inData: 输入的数据
+        modelEval: 
+    Returns:
+        
+    Time:
+        2019_11_24
+    '''
+    if not isTree(tree):
+        return modelEval(tree, inData)
+    if inData[tree['spInd']] > tree['spVal']:
+        if isTree(tree['left']):
+            return treeForeCast(tree['left'], inData, modelEval)
+        else:
+            return modelEval(tree['left'], inData)
+    else:
+        if isTree(tree['right']):
+            return treeForeCast(tree['right'], inData, modelEval)
+        else:
+            return modelEval(tree['right'], inData)
+        
+def createForeCast(tree, testData, modelEval=regTreeEval):
+    '''
+    Function Description:
+        多次调用createForCast()，以向量形式返回一组预测值
+    Parameters:
+        tree: 已经建立好的决策树模型
+        testData: 测试数据集
+        modelEval: 
+    Returns:
+        以向量形式返回一组预测值
+    Time:
+        2019_11_24
+    '''
+    m = len(testData)
+    yHat = np.mat(np.zeros((m, 1)))
+    for i in range(m):
+        yHat[i, 0] = treeForeCast(tree, np.mat(testData[i]), modelEval)
+    return yHat
+
 
 if __name__ == '__main__':
     '''
@@ -272,7 +411,6 @@ if __name__ == '__main__':
     print('mat0:\n', mat0)
     print('mat1:\n', mat1)
 
-    
     filename = 'ex00.txt'
     plotDataSet(filename)    
 
@@ -290,8 +428,10 @@ if __name__ == '__main__':
     filename = 'ex2.txt'
     plotDataSet(filename)
     myDat = loadDataSet(filename)
-    myMat = np.mat(myDat)
+    myMat = np.mat(myDat) 
     print(createTree(myMat, ops=(10000, 4)))
+    '''
+
     '''
     print("剪枝前")
     train_filename = 'ex2.txt'
@@ -304,8 +444,26 @@ if __name__ == '__main__':
     test_Data = loadDataSet(test_filename)
     test_Mat = np.mat(test_Data)
     print(prune(tree, test_Mat))
+    '''
 
+    '''
+    myMat2_filename = 'exp2.txt'
+    myMat2 = np.mat(loadDataSet(myMat2_filename))
+    print(createTree(myMat2, modelLeaf, modelErr, ops=(1, 10)))
+    '''
 
+    trainMat = np.mat(loadDataSet('bikeSpeedVsIq_train.txt'))
+    testMat = np.mat(loadDataSet('bikeSpeedVsIq_test.txt'))
+    myTree = createTree(trainMat, ops = (1, 20))
+    yHat = createForeCast(myTree, testMat[:, 0])
+    print(np.corrcoef(yHat, testMat[:, 1], rowvar = 0)[0, 1])
+    
+    myTree = createTree(trainMat, modelLeaf, modelErr, (1, 20))
+    yHat = createForeCast(myTree, testMat[:, 0], modelTreeEval)
+    print(np.corrcoef(yHat, testMat[:, 1], rowvar = 0)[0, 1])
 
+    ws, X, Y = linearSolve(trainMat)
+    print(ws)
 
-
+    for i in range(np.shape(testMat)[0]):
+        yHat[i] = testMat[i, 0] * ws[1, 0] + ws[0, 0]
