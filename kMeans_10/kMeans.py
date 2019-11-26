@@ -334,17 +334,6 @@ def clusterClubs(numClust=5):
         ax1.scatter(myCentroids[i].tolist()[0][0], myCentroids[i].tolist()[0][1], s=300, c='k', marker='+', alpha=.5)
     plt.show()
 
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
     '''
     datMat = np.mat(loadDataSet('testSet.txt'))
