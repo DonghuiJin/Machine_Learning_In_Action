@@ -278,7 +278,63 @@ def massPlaceFind(fileName):
         lat = float(lineArr[3])
         #获取相应的纬度
         lng = float(lineArr[4])
-        
+        #打印地名以及对应的经纬度信息
+        print('%s\t%f\t%f' % (lineArr[0], lat, lng))
+    fw.close()
+
+def distSLC(vecA, vecB):
+    '''
+    Function Description:
+        球面距离计算
+    Parameters:
+        vecA:数据向量
+        vecB:数据向量
+    Returns:
+        球面距离
+    Time:
+        2019_11_26            
+    '''
+    a = math.sin(vecA[0, 1] * np.pi / 180) * math.sin(vecB[0, 1] * np.pi / 180)
+    b = math.cos(vecA[0, 1] * np.pi / 180) * math.cos(vecB[0, 1] * np.pi / 180) * math.cos(np.pi * (vecB[0, 0] - vecA[0, 0]) / 180)
+    return math.acos(a + b) * 6371.0
+
+def clusterClubs(numClust=5):
+    '''
+    Function Description:
+        使用k-means聚类解决问题
+    Parameters:
+        numClust:聚类个数
+    Returns:
+        None
+    Time:
+        2019_11_26            
+    '''
+    datList = []
+    for line in open('places.txt').readlines():
+        lineArr = line.split('\t')
+        datList.append([float(lineArr[4]), float(lineArr[3])])
+    datMat = np.mat(datList)
+    #利用2-means聚类算法聚类
+    myCentroids, clustAssing = biKmeans(datMat, numClust, distMeas=distSLC)
+    fig = plt.figure()
+    rect = [0.1, 0.1, 0.8, 0.8]
+    scatterMarkers = ['s', 'o', '^', '8', 'p', 'd', 'v', 'h', '>', '<']
+    axprops = dict(xticks=[], yticks=[])
+    ax0 = fig.add_axes(rect, label='ax0', **axprops)
+    imgP = plt.imread('Portland.png')
+    ax0.imshow(imgP)
+    ax1 = fig.add_axes(rect, label='ax1', frameon=False)
+    for i in range(numClust):
+        ptsInCurrCluster = datMat[np.nonzero(clustAssing[:, 0].A == i)[0], :]
+        markerStyle = scatterMarkers[i % len(scatterMarkers)]
+        ax1.scatter(ptsInCurrCluster[:, 0].flatten().A[0],\
+                    ptsInCurrCluster[:, 1].flatten().A[0],\
+                    marker=markerStyle, s=90)
+    for i in range(numClust):
+        ax1.scatter(myCentroids[i].tolist()[0][0], myCentroids[i].tolist()[0][1], s=300, c='k', marker='+', alpha=.5)
+    plt.show()
+
+
 
 
 
@@ -298,18 +354,15 @@ if __name__ == '__main__':
 
     #plotDataSet('testSet.txt')
     
+    '''
     datMat = np.mat(loadDataSet('testSet2.txt'))
     cenList, myNewAssments = biKmeans(datMat, 3)
     plotDataSet('testSet2.txt', 3)
+    '''
+
+    clusterClubs()
 
 
-
-'''
-import kMeans
-import numpy as np
-datMat = np.mat(kMeans.loadDataSet('testSet.txt'))
-min(datMat[:, 0])
-'''
 
 
 
