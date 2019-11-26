@@ -164,7 +164,7 @@ def plotDataSet(filename, k):
     #ax.scatter(xcord[3], ycord[3], s=20, c='k', marker='o', alpha=.5)    
     #绘制质心
     for i in range(k):
-        ax.scatter(centList[i].tolist()[0][0], cenList[0][1], s=100, c='k', marker='+', alpha=.5)
+        ax.scatter(centList[i].tolist()[0][0], cenList[i].tolist()[0][1], s=100, c='k', marker='+', alpha=.5)
     '''
     ax.scatter(myCentroids[0][0], myCentroids[0][1], s=100, c='k', marker='+', alpha=.5)
     ax.scatter(myCentroids[1][0], myCentroids[1][1], s=100, c='k', marker='+', alpha=.5)
@@ -198,6 +198,7 @@ def biKmeans(dataSet, k, distMeas=distEclud):
     #初始化一个元素均值为0的(m, 2)的矩阵
     clusterAssment = np.mat(np.zeros((m, 2)))
     #获取数据集每一列数据的均值,组成一个列表
+    #tolist():将数组或者矩阵转换为列表
     centroid0 = np.mean(dataSet, axis=0).tolist()[0]
     #当前聚类列表为将数据集聚为一类
     centList = [centroid0]
@@ -218,7 +219,7 @@ def biKmeans(dataSet, k, distMeas=distEclud):
             #计算该类划分后两个类的误差平方和
             sseSplit = np.sum(splitClusAss[:, 1])
             #计算数据集重不属于该类的数据的误差平方和
-            sseNotSplit = np.sum(clusterAssment[np.nonzero(clusterAssment[:, 0].A != i), 1])
+            sseNotSplit = np.sum(clusterAssment[np.nonzero(clusterAssment[:, 0].A != i)[0], 1])
             #打印这两项误差值
             print('sseSplit = %f, and notSplit = %f' % (sseSplit, sseNotSplit))
             #划分第i类后总误差小于当前最小总误差
@@ -247,6 +248,39 @@ def biKmeans(dataSet, k, distMeas=distEclud):
         clusterAssment[np.nonzero(clusterAssment[:, 0].A == bestCentToSplit)[0], :] = bestClusAss
     #返回聚类结果
     return centList, clusterAssment
+
+'''10_4 对地图上的点进行聚类
+2019_11_26
+'''
+
+import urllib
+import json
+from time import sleep
+
+def massPlaceFind(fileName):
+    '''
+    Function Description:
+        具体文本数据批量地址经纬度获取
+    Parameters:
+        fileName:
+    Returns:
+        None
+    Time:
+        2019_11_26            
+    '''
+    #"wb+"以二进制写方式打开，可以读\写文件，如果文件不存在，创建该文家，如果文件已存在，
+    #先清空，再打开文件，以写的方式打开，如果文件不存在，创建该文件，如果文件已存在，先清空，再打开文件
+    fw = open('place.txt', 'w')
+    for line in open(fileName).readlines():
+        line = line.strip()
+        lineArr = line.split('\t')
+        #获取相应的经度
+        lat = float(lineArr[3])
+        #获取相应的纬度
+        lng = float(lineArr[4])
+        
+
+
 
 
 
