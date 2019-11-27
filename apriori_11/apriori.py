@@ -132,6 +132,94 @@ def apriori(dataSet, minSupport=0.5):
         k += 1
     return L, supportData
 
+'''11_3 关联规则生成函数
+2019_11_27
+'''
+
+def generateRules(L, supportData, minConf=0.7):
+    '''
+    Function Description:
+        生成关联规则
+    Parameters:
+        L:频繁项集列表
+        supportData:包含那些频繁项集支持数据的字典
+        minConf:最小可信度阈值
+    Returns:
+        bigRuleList:生成的规则列表
+    Time:
+        2019_11_27            
+    '''        
+    #储存所有的关联规则
+    bigRuleList = []
+    #只有获取两个或者更多集合的项目
+    #两个以及以上才可能有关联一说，单个元素的项集不存在关联问题
+    for i in range(1, len(L)):
+        for freqSet in L[i]:
+            #该函数遍历L中的每一个频繁项集并对每个频繁项集创建只包含单个元素集合的列表H1
+            H1 = [frozenset([item]) for item in freqSet]
+            if(i > 1):
+                #如果频繁项集元素数目超过2，那么会考虑对它做进一步的合并
+                rulesFromCOnseq(freqSet, H1, supportData, bigRuleList, minConf)
+            else:
+                #第一层时，i为1
+                calcConf(freqSet, H1, supportData, bigRuleList, minConf)
+    return bigRuleList
+
+
+def calcConf(freqSet, H, supportData, br1, minConf=0.7):
+    '''
+    Function Description:
+        生成候选规则集合，计算规则的可信度以及找到满足最小可信度要求的规则
+    Parameters:
+        freqSet:L中的某一个(i)频繁项集
+        H:L中的某一个(i)频繁项集元素组成的列表
+        supportData:包含那些频繁项集支持的数据的字典
+        br1:关联规则
+        minConf:最小可信度
+    Returns:
+        prunedH:返回满足最小可信度要求的项列表
+    Time:
+        2019_11_27            
+    '''            
+    #返回满足最小可信度要求的项列表
+    prunedH = []
+    #遍历L中的某一个(i)频繁项集的每个元素
+    for conseq in H:
+        #可信度计算，结合支持度数据
+        conf = supportData[freqSet] / supportData[freqSet - conseq]
+        if conf >= minConf:
+            #如果某条规则满足最小可信度值，那么将这些规则输出到屏幕显示
+            print(freqSet-conseq, '-->', conseq, 'conf:', conf)
+            #添加到规则里，br1是前面通过检查的bigRuleList
+            br1.append((freqSet-conseq, conseq, conf))
+            #通过检查的项进行保存
+            prunedH.append(conseq)
+    return prunedH
+
+def rulesFromConseq(freqSet, H, supportData, br1, minConf=0.7):
+    '''
+    Function Description:
+        生成候选规则集合，计算规则的可信度以及找到满足最小可信度要求的规则
+    Parameters:
+        L:频繁项集列表
+        supportData:包含那些频繁项集支持数据的字典
+        minConf:最小可信度阈值
+    Returns:
+        None
+    Time:
+        2019_11_27            
+    '''        
+    m = len(H[0])
+    #频繁项集元素数目大于单个集合的元素数
+    if(len(freqSet) > (m + 1)):
+        #存在不同顺序、元素相同的集合，合并具有相同部分的集合
+        Hmp1 = aprioriGen(H, m+1)
+        #计算可信度
+        Hmp1 = calcConf(freqSet, Hmp1, supportData, br1, minConf)
+        #满足最小可信度要求的规则列表多于1，则递归来判断是否可以进一步组合这些规则
+        if(len(Hmp1) > 1):
+            rulesFromConseq(freqSet, Hmp1, supportData, br1, minConf)
+        
 
 if __name__ == '__main__':
     suppData = loadDataSet()
