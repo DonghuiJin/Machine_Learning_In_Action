@@ -159,7 +159,7 @@ def generateRules(L, supportData, minConf=0.7):
             H1 = [frozenset([item]) for item in freqSet]
             if(i > 1):
                 #如果频繁项集元素数目超过2，那么会考虑对它做进一步的合并
-                rulesFromCOnseq(freqSet, H1, supportData, bigRuleList, minConf)
+                rulesFromConseq(freqSet, H1, supportData, bigRuleList, minConf)
             else:
                 #第一层时，i为1
                 calcConf(freqSet, H1, supportData, bigRuleList, minConf)
@@ -169,7 +169,7 @@ def generateRules(L, supportData, minConf=0.7):
 def calcConf(freqSet, H, supportData, br1, minConf=0.7):
     '''
     Function Description:
-        生成候选规则集合，计算规则的可信度以及找到满足最小可信度要求的规则
+        如果频繁项目集的元素只有两个，使用该函数计算可信度值
     Parameters:
         freqSet:L中的某一个(i)频繁项集
         H:L中的某一个(i)频繁项集元素组成的列表
@@ -199,11 +199,13 @@ def calcConf(freqSet, H, supportData, br1, minConf=0.7):
 def rulesFromConseq(freqSet, H, supportData, br1, minConf=0.7):
     '''
     Function Description:
-        生成候选规则集合，计算规则的可信度以及找到满足最小可信度要求的规则
+        如果频繁集的元素数目超过2，对其进行合并
     Parameters:
-        L:频繁项集列表
-        supportData:包含那些频繁项集支持数据的字典
-        minConf:最小可信度阈值
+        freqSet:L中的某一个(i)频繁项集
+        H:L中的某一个(i)频繁项集元素组成的列表
+        supportData:包含那些频繁项集支持的数据的字典
+        br1:关联规则
+        minConf:最小可信度
     Returns:
         None
     Time:
@@ -219,8 +221,21 @@ def rulesFromConseq(freqSet, H, supportData, br1, minConf=0.7):
         #满足最小可信度要求的规则列表多于1，则递归来判断是否可以进一步组合这些规则
         if(len(Hmp1) > 1):
             rulesFromConseq(freqSet, Hmp1, supportData, br1, minConf)
-        
+
 
 if __name__ == '__main__':
-    suppData = loadDataSet()
-    
+    '''
+    dataSet = loadDataSet()
+    L, supportData = apriori(dataSet, 0.5)
+    print(L)
+    print(supportData)
+    rules = generateRules(L, supportData, minConf=0.7)
+    print(rules)
+    '''
+
+    mushuDataSet = [line.split() for line in open('mushroom.dat').readlines()]
+    L, supportData = apriori(mushuDataSet, 0.3)
+    for item in L[3]:
+        if item.intersection('2'):
+            print(item)
+            
