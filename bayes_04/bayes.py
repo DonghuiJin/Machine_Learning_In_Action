@@ -1,5 +1,5 @@
 from numpy import *
-import feedparser
+#import feedparser
 
 '''4_1词表到向量的转换函数
 2019_11_3
@@ -278,10 +278,10 @@ if __name__ == '__main__':
     #现改用新的网址
     #源1 NASA Image of the Day：http://www.nasa.gov/rss/dyn/image_of_the_day.rss
     #源0 Yahoo Sports - NBA - Houston Rockets News：http://sports.yahoo.com/nba/teams/hou/rss.xml
-    ny = feedparser.parse('http://www.nasa.gov/rss/dyn/image_of_the_day.rss')
-    sf = feedparser.parse('http://sports.yahoo.com/nba/teams/hou/rss.xml')
-    vocabList, pSF, pNY = localWords(ny, sf)
-    getTopWords(ny, sf)
+    #ny = feedparser.parse('http://www.nasa.gov/rss/dyn/image_of_the_day.rss')
+    #sf = feedparser.parse('http://sports.yahoo.com/nba/teams/hou/rss.xml')
+    #vocabList, pSF, pNY = localWords(ny, sf)
+    #getTopWords(ny, sf)
 
 
 

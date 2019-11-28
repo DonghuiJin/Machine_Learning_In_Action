@@ -232,10 +232,11 @@ if __name__ == '__main__':
     rules = generateRules(L, supportData, minConf=0.7)
     print(rules)
     '''
-
+    
     mushuDataSet = [line.split() for line in open('mushroom.dat').readlines()]
     L, supportData = apriori(mushuDataSet, 0.3)
     for item in L[3]:
         if item.intersection('2'):
             print(item)
-            
+
+

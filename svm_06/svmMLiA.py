@@ -220,11 +220,11 @@ def innerL(i, oS):
 if __name__ == '__main__':
     #6_1SMO算法中的辅助函数测试
     '''6_1SMO算法中的辅助函数'''
-    #dataArr, labelArr = svmMLiA.loadDataSet('testSet.txt')
-    #print(labelArr)
+    dataArr, labelArr = svmMLiA.loadDataSet('testSet.txt')
+    print(labelArr)
     #6_2简化版SMO算法测试
     '''6_2简化版SMO算法'''
-    #b, alphas = svmMLiA.smoSimple(dataArr, labelArr, 0.6, 0.001, 40)
+    b, alphas = svmMLiA.smoSimple(dataArr, labelArr, 0.6, 0.001, 40)
     #alphas[alphas>0]
     #b
     #for i in range(100):
