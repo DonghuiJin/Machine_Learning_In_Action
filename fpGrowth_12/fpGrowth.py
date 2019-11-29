@@ -297,3 +297,5 @@ if __name__ == '__main__':
     mineTree(myFPtree, myHeaderTab, 100000, set([]), myFreqList)
     #打印频繁项集(哪些报道浏览量达到支持度)
     print(myFreqList)
+
+    
